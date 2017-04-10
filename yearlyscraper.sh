@@ -1,16 +1,17 @@
 #!/bin/bash
 
-currentdate=2016-01-01
-loopenddate=2016-12-31
+currentdate=$2-01-01
+loopenddate=$2-12-31
 
-airport=KOAK
+airport=$1
 
 if [ ! -d "weatherData" ]; then
 	mkdir weatherData
-	if [ ! -d "weatherData/$airport" ]; then
-		mkdir "weatherData/$airport"
-	fi
 fi
+if [ ! -d "weatherData/$airport" ]; then
+	mkdir "weatherData/$airport"
+fi
+
 
 until [ "$currentdate" == "$loopenddate" ]
 do
