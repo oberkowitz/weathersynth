@@ -5,7 +5,7 @@
 	<script src="https://d3js.org/d3.v3.min.js"></script>
 	<script src="https://d3js.org/d3-color.v1.min.js"></script>
 	<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
-
+	<script src="http://localhost:8000/EnvelopeGenerator.js"></script>
 	<script type="text/javascript">
 		window.onload = function(){ 
 			var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -24,14 +24,15 @@
 				n = n + '';
 				return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 			}
+			function randomDate(start, end) {
+				return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+			}
+
 			
 			function touch() {
-				function randomDate(start, end) {
-					return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-				}
 				var date = randomDate(new Date(2016, 0, 1), new Date(2016, 11, 31))
 
-				d3.tsv("weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate() + 1, 2) + "-16.tsv", function(data) {
+				d3.tsv("weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
 					var temps = data.map(function(x) {
 						var temp = +x["Temp."].replace(/[^\d.-]/g, '');
 						return temp;
@@ -42,7 +43,7 @@
 					})
 
 					var interp = d3.interpolateBasis(normies);
-					var interped = d3.quantize(interp, 100);
+					var interped = d3.quantize(interp, 441);
 
 
 					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate);
@@ -56,13 +57,22 @@
 					console.log("playing")
 
 					var source = audioCtx.createBufferSource();
+					var biquadFilter = audioCtx.createBiquadFilter();
+					var gain = audioCtx.createGain();
+					var env = new EnvelopeGenerator(audioCtx);
+
 					source.buffer = myArrayBuffer;
-					source.connect(audioCtx.destination);
+
+					source.connect(gain);
+					gain.connect(biquadFilter);
+					env.connect(gain.gain);
+					biquadFilter.connect(audioCtx.destination);
+					biquadFilter.type = "highpass";
+					biquadFilter.frequency.value = 10;
+
 					source.start();
-
-
+					env.trigger();
 				})
-
 			}
 			button.onclick = touch;
 			console.log("ready");
