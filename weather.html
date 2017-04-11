@@ -11,14 +11,18 @@
 		window.onload = function(){ 
 
 			var startDate = new Date(2016, 0, 1);
+			var endDate = new Date(2016, 11, 31);
 			var dateIncrement = 0; 
+			var yearTempData = {};
+			var yearSound = [];
 
 			var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 			var button = document.getElementById('b');
 			var pre = document.querySelector('pre');
 			var myScript = document.querySelector('script');
 
-			var ardmap = function(x, inMin, inMax, outMin, outMax) {
+			var ardmap = function(x, inMin, inMax, outMin, outMax) { // Map value x in range [inMin, inMax] to a value in range [outMin, outMax]
+				// Ex: ardmap(5, 0, 10, 2, 4) == 3
 				return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 			}
 			function pad(n, width, z) {
@@ -27,19 +31,87 @@
 				return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 			}
 
-			function getDateIncrement() {
-				return ;
-			}
+			function isLeapYear(year) {  
+			     return year % 400 === 0 || (year % 100 !== 0 && year % 4 === 0);  
+			}  
 
 			function randomDate(start, end) {
 				return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 			}
 
-			function getNextDate() {
-				return new Date(startDate.getYear(), startDate.getMonth(), startDate.getDate() + dateIncrement++);
+			Array.prototype.extend = function (other_array) {
+			    /* you should include a test to check whether other_array really is an array */
+			    other_array.forEach(function(v) {this.push(v)}, this);    
 			}
-			
+
+			function getNextDate() {
+				var daysPerYear = 365;
+				if (isLeapYear(startDate.getFullYear())) {
+					daysPerYear = 366;
+				}
+				return new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + (dateIncrement++ % daysPerYear));
+			}
+
+
+			var date = getNextDate();
+			do {
+				d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
+					var temps = data.map(function(x) {
+						var temp = +x["Temp."].replace(/[^\d.-]/g, '');
+						return temp;
+					});
+
+					yearTempData[date] = temps;
+
+					var normies = temps.map(function(x) { // Normalize the data
+						return ardmap(x, Math.min.apply(null, temps), Math.max.apply(null, temps), -1.0, 1.0);
+					})
+
+					var interp = d3.interpolateBasis(normies); // Establish piecewise linear interpolation for the timeseries
+					var interped = d3.quantize(interp, 100); // Sample 100 points evenly along interpolator, makes a tone of 441 Hz at 44.1kHz sampling rate
+
+					yearSound.extend(interped);
+					console.log("finshed with: " + date);
+					console.log(yearSound.length);
+				})
+
+				date.setDate(date.getDate() + 1);
+			} while (date.getTime() < endDate.getTime());
+
 			function touch() {
+					var channels = 2;
+					var frameCount = audioCtx.sampleRate * 2.0;
+
+					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate); // Build a 2-channel (stereo) buffer that lasts 2 seconds long at 44.1 kHz sample rate 
+
+					for (var channel = 0; channel < channels; channel++) {
+						var nowBuffering = myArrayBuffer.getChannelData(channel);
+						for (var i = 0; i < frameCount; i++) {
+							nowBuffering[i] = yearSound[i % yearSound.length];
+						}
+					}
+					console.log("playing")
+
+					var source = audioCtx.createBufferSource();
+					var biquadFilter = audioCtx.createBiquadFilter();
+					var gain = audioCtx.createGain();
+					var env = new EnvelopeGenerator(audioCtx);
+
+					source.buffer = myArrayBuffer;
+
+					source.connect(gain);
+					gain.connect(biquadFilter);
+					env.connect(gain.gain);
+					biquadFilter.connect(audioCtx.destination);
+					biquadFilter.type = "lowpass";
+					biquadFilter.frequency.value = 10000;
+
+					source.playbackRate.value = .3;
+					source.start();
+					env.trigger();
+
+			}
+			function touch1() {
 				var date = getNextDate();
 				d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
 					var temps = data.map(function(x) {
@@ -47,18 +119,20 @@
 						return temp;
 					});
 
-					var normies = temps.map(function(x) {
+					yearTempData[date] = temps;
+
+					var normies = temps.map(function(x) { // Normalize the data
 						return ardmap(x, Math.min.apply(null, temps), Math.max.apply(null, temps), -1.0, 1.0);
 					})
 
-					var interp = d3.interpolateBasis(normies);
-					var interped = d3.quantize(interp, 100);
+					var interp = d3.interpolateBasis(normies); // Establish piecewise linear interpolation for the timeseries
+					var interped = d3.quantize(interp, 100); // Sample 100 points evenly along interpolator, makes a tone of 441 Hz at 44.1kHz sampling rate
 
 
 					var channels = 2;
 					var frameCount = audioCtx.sampleRate * 2.0;
 
-					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate);
+					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate); // Build a 2-channel (stereo) buffer that lasts 2 seconds long at 44.1 kHz sample rate 
 
 					for (var channel = 0; channel < channels; channel++) {
 						var nowBuffering = myArrayBuffer.getChannelData(channel);
@@ -79,8 +153,8 @@
 					gain.connect(biquadFilter);
 					env.connect(gain.gain);
 					biquadFilter.connect(audioCtx.destination);
-					biquadFilter.type = "highpass";
-					biquadFilter.frequency.value = 10;
+					biquadFilter.type = "lowpass";
+					biquadFilter.frequency.value = 10000;
 
 					source.start();
 					env.trigger();
