@@ -1,6 +1,6 @@
 var EnvelopeGenerator = function(context) {
   this.attackTime = 0.1;
-  this.releaseTime = 0.1;
+  this.releaseTime = 0.3;
   this.param = null;
   this.context = context;
 

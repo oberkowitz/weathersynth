@@ -6,15 +6,13 @@
 	<script src="https://d3js.org/d3-color.v1.min.js"></script>
 	<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
 	<script src="http://localhost:8000/EnvelopeGenerator.js"></script>
+	
 	<script type="text/javascript">
 		window.onload = function(){ 
 			var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 			var button = document.getElementById('b');
 			var pre = document.querySelector('pre');
 			var myScript = document.querySelector('script');
-
-			var channels = 2;
-			var frameCount = audioCtx.sampleRate * 2.0;
 
 			var ardmap = function(x, inMin, inMax, outMin, outMax) {
 				return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
@@ -32,7 +30,7 @@
 			function touch() {
 				var date = randomDate(new Date(2016, 0, 1), new Date(2016, 11, 31))
 
-				d3.tsv("weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
+				d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
 					var temps = data.map(function(x) {
 						var temp = +x["Temp."].replace(/[^\d.-]/g, '');
 						return temp;
@@ -45,6 +43,9 @@
 					var interp = d3.interpolateBasis(normies);
 					var interped = d3.quantize(interp, 441);
 
+
+					var channels = 2;
+					var frameCount = audioCtx.sampleRate * 2.0;
 
 					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate);
 
