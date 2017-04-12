@@ -38,7 +38,7 @@
 
 			var date = getNextDate();
 			do {
-				d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
+				d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-2016.tsv", function(data) {
 					var temps = data.map(function(x) {
 						var temp = +x["Temp."].replace(/[^\d.-]/g, '');
 						return temp;
