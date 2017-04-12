@@ -144,43 +144,41 @@
 				console.log("ready");
 
 				function renderChart() {
-					var yearData = [];
-					var normies = yearSound.map(function(x) { // Normalize the data
-						return ardmap(x, Math.min.apply(null, yearSound), Math.max.apply(null, yearSound), -1.0, 1.0);
+
+					d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function(d){
+						// 2016-01-01 12:53 AM
+						var parseTime = d3.timeParse("%Y-%m-%d %I:%M %p");
+						obj = {};
+						obj.x = parseTime(d["Time (PST)"]);
+						obj.y = +d["Temp."].replace(/[^\d.-]/g, '');;
+						return obj;
+					}, function(error, data) {
+						if (error) throw error;
+
+						var svg = d3.select("svg"),
+							margin = {top: 20, right: 20, bottom: 30, left: 50},
+							width = +svg.attr("width") - margin.left - margin.right,
+							height = +svg.attr("height") - margin.top - margin.bottom,
+							g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+						// Set the ranges
+						var x = d3.scaleLinear().range([0, width]);
+						var y = d3.scaleLinear().range([height, 0]);
+						var line = d3.line()
+							.x(function(d) { return x(d.x)})
+							.y(function(d) { return y(d.y)})
+						
+						x.domain(d3.extent(data, function(d) { return d.x; }));
+						y.domain(d3.extent(data, function(d) { return d.y; }));
+						g.append("path")
+							.datum(data)
+							.attr("fill", "none")
+							.attr("stroke", "steelblue")
+							.attr("stroke-linejoin", "round")
+							.attr("stroke-linecap", "round")
+							.attr("stroke-width", 1.5)
+							.attr("d", line);
 					})
-					yearSound = normies;
-
-					for (var i = 0; i < normies.length; i++) {
-						yearData.push({"x": i, "y": normies[i]});
-					}
-
-					var line = d3.line(); 
-					var svg = d3.select("svg"),
-						margin = {top: 20, right: 20, bottom: 30, left: 50},
-						width = +svg.attr("width") - margin.left - margin.right,
-						height = +svg.attr("height") - margin.top - margin.bottom,
-						g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-					// Set the ranges
-					var x = d3.scaleLinear().range([0, width]);
-					var y = d3.scaleLinear().range([height, 0]);
-
-					var line = d3.line()
-						.x(function(d) { return x(d.x); })
-						.y(function(d) { return y(d.y); });
-					
-					x.domain(d3.extent(yearData, function(d) { return d.x; }));
-					y.domain(d3.extent(yearData, function(d) { return d.y; }));
-					g.append("path")
-				      .datum(yearData)
-				      .attr("fill", "none")
-				      .attr("stroke", "steelblue")
-				      .attr("stroke-linejoin", "round")
-				      .attr("stroke-linecap", "round")
-				      .attr("stroke-width", 1.5)
-				      .attr("d", line);
-
-
 				}
 			}
 		</script>
