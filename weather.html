@@ -28,13 +28,9 @@
 			var myScript = document.querySelector('script');
 
 			function getNextDate() {
-				var daysPerYear = 365;
-				if (isLeapYear(startDate.getFullYear())) {
-					daysPerYear = 366;
-				}
-				return new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + (dateIncrement++ % daysPerYear));
+				var days = daysPerYear(startDate.getFullYear());
+				return new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + (dateIncrement++ % days));
 			}
-
 
 			var date = getNextDate();
 			do {
@@ -154,7 +150,7 @@
 						var parseTime = d3.timeParse("%Y-%m-%d %I:%M %p");
 						obj = {};
 						obj.x = parseTime(d["Time (PST)"]);
-						obj.y = +d["Temp."].replace(/[^\d.-]/g, '');;
+						obj.y = +d["Temp."].replace(/[^\d.-]/g, '');
 						return obj;
 					}, function(error, data) {
 						if (error) throw error;
@@ -171,10 +167,33 @@
 						var line = d3.line()
 							.x(function(d) { return x(d.x)})
 							.y(function(d) { return y(d.y)})
+
+
+						// var numSamples = daysPerYear(2016) * 100;
+						// var yScale = d3.scaleLinear()
+						// 	.domain(d3.extent(data, function(d) { return d.y; }))
+						// 	.range([-1.0, 1.0])
+						// var xScale = d3.scaleLinear()
+						// 	.domain(d3.extent(data, function(d) { return d.x; }))
+						// 	.range([0, numSamples])
 						
+						// time = new Date();
+						// xVals = [];
+						// yVals = [];
+						// data.forEach(function(d) {
+						// 	xVals.push(xScale(d.x));
+						// 	yVals.push(yScale(d.y));
+						// }) 						
+
+						// var interp = d3.interpolateBasis(yVals);
+						// var interped = d3.quantize(interp, numSamples);
+
+						// finished = new Date();
+						// console.log("took this much time: " + ((finished.getTime() - time.getTime()) / 1000.0));
+
 						x.domain(d3.extent(data, function(d) { return d.x; }));
 						y.domain(d3.extent(data, function(d) { return d.y; }));
-						g.append("path")
+						var path = g.append("path")
 							.datum(data)
 							.attr("fill", "none")
 							.attr("stroke", "steelblue")
@@ -182,6 +201,8 @@
 							.attr("stroke-linecap", "round")
 							.attr("stroke-width", 1.5)
 							.attr("d", line);
+
+
 					})
 				}
 			}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<svg width="960" height="500"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 60},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var parseDate = d3.timeParse("%Y-%m-%d %I:%M %p"),
+    formatDate = d3.timeFormat("%Y");
+
+var x = d3.scaleTime()
+    .domain([new Date(2016, 0, 1), new Date(2017, 0, 0)])
+    .range([0, width]);
+
+var y = d3.scaleLinear()
+    .range([height, 0]);
+
+var xAxis = d3.axisBottom(x);
+
+var yAxis = d3.axisLeft(y);
+
+var line = d3.line()
+    .x(function(d) { return x(d.x)})
+    .y(function(d) { return y(d.y)})
+
+var yGroup = g.append("g");
+
+var xGroup = g.append("g")
+    .attr("transform", "translate(0," + height + ")");
+
+var zoom = d3.zoom()
+    .scaleExtent([1, 366])
+    .translateExtent([[-width, -Infinity], [2 * width, Infinity]])
+    .on("zoom", zoomed);
+
+var zoomRect = svg.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "none")
+    .attr("pointer-events", "all")
+    .call(zoom);
+
+var path = g.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "steelblue")
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 1.5)
+
+d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function(d) {
+    obj = {};
+    obj.x = parseDate(d["Time (PST)"]);
+    obj.y = +d["Temp."].replace(/[^\d.-]/g, '');
+    return obj;
+}, function(error, data) {
+    if (error) throw error;
+    var xExtent = d3.extent(data, function(d) { return d.x; });
+    zoom.translateExtent([[x(xExtent[0]), -Infinity], [x(xExtent[1]), Infinity]])
+    y.domain([0, d3.max(data, function(d) { return d.y; })]);
+    yGroup.call(yAxis).select(".domain").remove();
+    path.datum(data);
+    zoomRect.call(zoom.transform, d3.zoomIdentity);
+
+    var pathEl = path.node();
+    var pathLength = pathEl.getTotalLength();
+    
+
+
+});
+
+function zoomed() {
+    var xz = d3.event.transform.rescaleX(x);
+    xGroup.call(xAxis.scale(xz));
+    path.attr("d", line.x(function(d){ return xz(d.x)}));
+
+}
+
+</script>

@@ -30,7 +30,7 @@ do
 	# Output all the data to one big file
 	outputFile="./weatherData/$airport/${airport}-${year}-complete.tsv"
 	if [ "$currentdate" == "$startdate" ]; then
-		cat "$filename" >> "$outputFile"
+		cat "$filename" > "$outputFile"
 	else
 		tail -n +2 "$filename" >> "$outputFile"
 	fi
