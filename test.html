@@ -3,19 +3,24 @@
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
 
+// Create outer SVG object
 var svg = d3.select("svg"),
-    margin = {top: 20, right: 20, bottom: 30, left: 60},
+    margin = {top: 20, right: 20, bottom: 100, left: 60},
     width = +svg.attr("width") - margin.left - margin.right,
     height = +svg.attr("height") - margin.top - margin.bottom,
-    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    g = svg.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
+// Date parsing functions
 var parseDate = d3.timeParse("%Y-%m-%d %I:%M %p"),
     formatDate = d3.timeFormat("%Y");
 
+// Scale function for the x-axis. Maps time values from the range of time between the beginning to the end of 2016 to fit in the SVG
 var x = d3.scaleTime()
     .domain([new Date(2016, 0, 1), new Date(2017, 0, 0)])
     .range([0, width]);
 
+// Scale function for the y-axis. Maps [1,0] to [height,0]. Domain is changed later when the CSV is loaded
 var y = d3.scaleLinear()
     .range([height, 0]);
 
@@ -25,11 +30,12 @@ var yAxis = d3.axisLeft(y);
 
 var line = d3.line()
     .x(function(d) { return x(d.x)})
-    .y(function(d) { return y(d.y)})
+    .y(function(d) { return y(d.y)});
 
 var yGroup = g.append("g");
 
 var xGroup = g.append("g")
+    .attr("id", "xGroup")
     .attr("transform", "translate(0," + height + ")");
 
 var zoom = d3.zoom()
@@ -38,18 +44,37 @@ var zoom = d3.zoom()
     .on("zoom", zoomed);
 
 var zoomRect = svg.append("rect")
+    .attr("id", "zoomRect")
     .attr("width", width)
     .attr("height", height)
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
     .attr("fill", "none")
     .attr("pointer-events", "all")
     .call(zoom);
 
+var mask = svg.append("defs")
+  .append("clipPath")
+  .attr("id", "mask")
+  .style("pointer-events", "none")
+    .append("rect")
+    .attr("width", width)
+    .attr("height", height)
+
 var path = g.append("path")
+    .attr("id", "path")
     .attr("fill", "none")
     .attr("stroke", "steelblue")
     .attr("stroke-linejoin", "round")
     .attr("stroke-linecap", "round")
     .attr("stroke-width", 1.5)
+    .attr("clip-path", "url(#mask)")
+
+var g = path.append("g")
+    .attr("class", "axis axis--grid")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis
+        .ticks(24)
+        .tickSize(-height))
 
 d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function(d) {
     obj = {};
@@ -58,24 +83,39 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
     return obj;
 }, function(error, data) {
     if (error) throw error;
-    var xExtent = d3.extent(data, function(d) { return d.x; });
-    zoom.translateExtent([[x(xExtent[0]), -Infinity], [x(xExtent[1]), Infinity]])
-    y.domain([0, d3.max(data, function(d) { return d.y; })]);
+
+    // Set the domain of the y axis scale function to go between the min and max of range of y values, adding a pad at the bottom.
+    var yMin = d3.min(data, function(d) { return d.y; });
+    var yMax = d3.max(data, function(d) { return d.y; });
+    y.domain([ yMin - 4, yMax]);
+
     yGroup.call(yAxis).select(".domain").remove();
     path.datum(data);
     zoomRect.call(zoom.transform, d3.zoomIdentity);
 
     var pathEl = path.node();
     var pathLength = pathEl.getTotalLength();
-    
-
-
+    pathEl.getPointAtLength(pathLength * .01);
 });
 
 function zoomed() {
+    // TODO: Find out why the rescale causes the axis and the path to shift to the right
+    console.log(d3.event.transform);
     var xz = d3.event.transform.rescaleX(x);
+
     xGroup.call(xAxis.scale(xz));
-    path.attr("d", line.x(function(d){ return xz(d.x)}));
+    path.attr("d", line.x(function(d){return xz(d.x) }));
+    xGroup
+        .selectAll("text")
+        .attr("y", 0)
+        .attr("x", 9)
+        .attr("dy", ".35em")
+        .attr("transform", "rotate(70)")
+        .style("text-anchor", "start");
+    xGroup
+        .selectAll(".tick:not(:first-of-type) line").attr("stroke", "#777").attr("stroke-dasharray", "2,2");
+
+
 
 }
 
