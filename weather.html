@@ -2,13 +2,16 @@
 <html>
 <head>
 	<title></title>
-	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
 	<script src="https://d3js.org/d3-color.v1.min.js"></script>
+	<script src="https://d3js.org/d3-shape.v1.min.js"></script>
+	<script src="https://d3js.org/d3-path.v1.min.js"></script>
 	<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
 	<script src="http://localhost:8000/EnvelopeGenerator.js"></script>
+	<svg width="2000" height="500"></svg>
 
 	<script type="text/javascript">
-		window.onload = function(){ 
+		window.onload = function(){
 
 			var startDate = new Date(2016, 0, 1);
 			var endDate = new Date(2016, 11, 31);
@@ -18,6 +21,8 @@
 
 			var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 			var button = document.getElementById('b');
+			var button1 = document.getElementById('c');
+
 			var pre = document.querySelector('pre');
 			var myScript = document.querySelector('script');
 
@@ -32,7 +37,7 @@
 			}
 
 			function isLeapYear(year) {  
-			     return year % 400 === 0 || (year % 100 !== 0 && year % 4 === 0);  
+				return year % 400 === 0 || (year % 100 !== 0 && year % 4 === 0);  
 			}  
 
 			function randomDate(start, end) {
@@ -40,8 +45,8 @@
 			}
 
 			Array.prototype.extend = function (other_array) {
-			    /* you should include a test to check whether other_array really is an array */
-			    other_array.forEach(function(v) {this.push(v)}, this);    
+				/* you should include a test to check whether other_array really is an array */
+				other_array.forEach(function(v) {this.push(v)}, this);    
 			}
 
 			function getNextDate() {
@@ -63,11 +68,7 @@
 
 					yearTempData[date] = temps;
 
-					var normies = temps.map(function(x) { // Normalize the data
-						return ardmap(x, Math.min.apply(null, temps), Math.max.apply(null, temps), -1.0, 1.0);
-					})
-
-					var interp = d3.interpolateBasis(normies); // Establish piecewise linear interpolation for the timeseries
+					var interp = d3.interpolateBasis(temps); // Establish piecewise linear interpolation for the timeseries
 					var interped = d3.quantize(interp, 100); // Sample 100 points evenly along interpolator, makes a tone of 441 Hz at 44.1kHz sampling rate
 
 					yearSound.extend(interped);
@@ -79,8 +80,8 @@
 			} while (date.getTime() < endDate.getTime());
 
 			function touch() {
-					var channels = 2;
-					var frameCount = audioCtx.sampleRate * 2.0;
+				var channels = 2;
+				var frameCount = audioCtx.sampleRate * 2.0;
 
 					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate); // Build a 2-channel (stereo) buffer that lasts 2 seconds long at 44.1 kHz sample rate 
 
@@ -110,16 +111,16 @@
 					source.start();
 					env.trigger();
 
-			}
-			function touch1() {
-				var date = getNextDate();
-				d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
-					var temps = data.map(function(x) {
-						var temp = +x["Temp."].replace(/[^\d.-]/g, '');
-						return temp;
-					});
+				}
+				function touch1() {
+					var date = getNextDate();
+					d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
+						var temps = data.map(function(x) {
+							var temp = +x["Temp."].replace(/[^\d.-]/g, '');
+							return temp;
+						});
 
-					yearTempData[date] = temps;
+						yearTempData[date] = temps;
 
 					var normies = temps.map(function(x) { // Normalize the data
 						return ardmap(x, Math.min.apply(null, temps), Math.max.apply(null, temps), -1.0, 1.0);
@@ -159,14 +160,56 @@
 					source.start();
 					env.trigger();
 				})
+				}
+				button.onclick = touch;
+				button1.onclick = renderChart;
+				console.log("ready");
+
+				function renderChart() {
+					var yearData = [];
+					var normies = yearSound.map(function(x) { // Normalize the data
+						return ardmap(x, Math.min.apply(null, yearSound), Math.max.apply(null, yearSound), -1.0, 1.0);
+					})
+					yearSound = normies;
+
+					for (var i = 0; i < normies.length; i++) {
+						yearData.push({"x": i, "y": normies[i]});
+					}
+
+					var line = d3.line(); 
+					var svg = d3.select("svg"),
+						margin = {top: 20, right: 20, bottom: 30, left: 50},
+						width = +svg.attr("width") - margin.left - margin.right,
+						height = +svg.attr("height") - margin.top - margin.bottom,
+						g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+					// Set the ranges
+					var x = d3.scaleLinear().range([0, width]);
+					var y = d3.scaleLinear().range([height, 0]);
+
+					var line = d3.line()
+						.x(function(d) { return x(d.x); })
+						.y(function(d) { return y(d.y); });
+					
+					x.domain(d3.extent(yearData, function(d) { return d.x; }));
+					y.domain(d3.extent(yearData, function(d) { return d.y; }));
+					g.append("path")
+				      .datum(yearData)
+				      .attr("fill", "none")
+				      .attr("stroke", "steelblue")
+				      .attr("stroke-linejoin", "round")
+				      .attr("stroke-linecap", "round")
+				      .attr("stroke-width", 1.5)
+				      .attr("d", line);
+
+
+				}
 			}
-			button.onclick = touch;
-			console.log("ready");
-		}
-	</script>
-</head>
-<body>
-	<pre></pre>
-	<input type="button" id="b">Play the weather</input>
-</body>
-</html>
+		</script>
+	</head>
+	<body>
+		<pre></pre>
+		<input type="button" id="b">Play the weather</input>
+		<input type="button" id="c">Show the chart</input>
+	</body>
+	</html>
