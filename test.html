@@ -76,7 +76,7 @@ var g = path.append("g")
 
 var brush = d3.brushX()
     .extent([[0, 0], [width, height2]])
-    // .on("brush end", brushed);
+    .on("brush end", brushed);
 
 var area2 = d3.area()
     .curve(d3.curveMonotoneX)
@@ -95,6 +95,9 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
     return obj;
 }, function(error, data) {
     if (error) throw error;
+    data = data.sort(function(a, b) {
+        return a.x - b.x;
+    });
 
     x.domain(d3.extent(data, function(d) { return d.x; }));
     y.domain([0, d3.max(data, function(d) { return d.y; })]);
@@ -111,25 +114,25 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
     zoomRect.call(zoom.transform, d3.zoomIdentity);
 
     context.append("path")
-      .datum(data)
-      .attr("stroke", "steelblue")
-      .attr("fill", "steelblue")
-      .attr("class", "area")
-      .attr("d", area2);
+        .datum(data)
+        .attr("stroke", "steelblue")
+        .attr("fill", "steelblue")
+        .attr("class", "area")
+        .attr("d", area2);
 
     context.append("g")
-      .attr("class", "axis axis--x")
-      .attr("transform", "translate(0," + height2 + ")")
-      .call(xAxis2);
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height2 + ")")
+        .call(xAxis2);
 
     context.append("g")
-      .attr("class", "brush")
-      .call(brush)
-      .call(brush.move, x.range());
+        .attr("class", "brush")
+        .call(brush)
+        .call(brush.move, x.range());
 });
 
 function zoomed() {
-    // TODO: Find out why the rescale causes the axis and the path to shift to the right
+  if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore brush-by-zoom
     var t = d3.event.transform;
     var xz = d3.event.transform.rescaleX(x);
 
@@ -145,7 +148,20 @@ function zoomed() {
     xGroup
         .selectAll(".tick").attr("stroke", "#777").attr("stroke-dasharray", "2,2");
 
-  context.select(".brush").call(brush.move, xz.range().map(t.invertX, t));
+    context.select(".brush").call(brush.move, xz.range().map(t.invertX, t));
+}
+
+function brushed() {
+    if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+    var s = d3.event.selection || x2.range();
+
+
+    var xz = d3.scaleTime().domain(s.map(x2.invert, x2));
+    xGroup.call(xAxis.scale(xz));
+    path.attr("d", line.x(function(d){return xz(d.x) }));
+    zoomRect.call(zoom.transform, d3.zoomIdentity
+        .scale(width / (s[1] - s[0]))
+        .translate(-s[0], 0));
 }
 
 </script>
