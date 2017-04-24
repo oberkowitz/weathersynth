@@ -63,10 +63,14 @@
 
 					var myArrayBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate); // Build a 2-channel (stereo) buffer that lasts 2 seconds long at 44.1 kHz sample rate 
 
+					yearSound = yearSound.map(function(x) { // Normalize the data
+						return ardmap(x, Math.min.apply(null, yearSound), Math.max.apply(null, yearSound), -1.0, 1.0);
+					})
+
 					for (var channel = 0; channel < channels; channel++) {
 						var nowBuffering = myArrayBuffer.getChannelData(channel);
 						for (var i = 0; i < frameCount; i++) {
-							nowBuffering[i] = yearSound[i % yearSound.length];
+							nowBuffering[i] = normies[i % normies.length];
 						}
 					}
 					console.log("playing")
@@ -92,7 +96,7 @@
 				}
 				function touch1() {
 					var date = getNextDate();
-					d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-16.tsv", function(data) {
+					d3.tsv("http://localhost:8000/weatherData/KOAK/" + pad(date.getMonth()+1,2) + "-" + pad(date.getDate(), 2) + "-2016.tsv", function(data) {
 						var temps = data.map(function(x) {
 							var temp = +x["Temp."].replace(/[^\d.-]/g, '');
 							return temp;

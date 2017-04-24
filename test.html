@@ -78,12 +78,6 @@ var brush = d3.brushX()
     .extent([[0, 0], [width, height2]])
     // .on("brush end", brushed);
 
-var area = d3.area()
-    .curve(d3.curveMonotoneX)
-    .x(function(d) { return x(d.x); })
-    .y0(height)
-    .y1(function(d) { return y(d.y); });
-
 var area2 = d3.area()
     .curve(d3.curveMonotoneX)
     .x(function(d) { return x2(d.x); })
@@ -118,6 +112,8 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
 
     context.append("path")
       .datum(data)
+      .attr("stroke", "steelblue")
+      .attr("fill", "steelblue")
       .attr("class", "area")
       .attr("d", area2);
 
@@ -150,8 +146,6 @@ function zoomed() {
         .selectAll(".tick").attr("stroke", "#777").attr("stroke-dasharray", "2,2");
 
   context.select(".brush").call(brush.move, xz.range().map(t.invertX, t));
-
-
 }
 
 </script>
