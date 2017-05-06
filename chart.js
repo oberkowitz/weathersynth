@@ -5,7 +5,7 @@ var svg = d3.select("svg"),
     width = +svg.attr("width") - margin.left - margin.right,
     height = +svg.attr("height") - margin.top - margin.bottom,
     height2 = +svg.attr("height") - margin2.top - margin2.bottom;
-    g = svg.append("g")
+    focus = svg.append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
 // Date parsing functions
@@ -25,9 +25,9 @@ var line = d3.line()
     .x(function(d) { return x(d.x)})
     .y(function(d) { return y(d.y)});
 
-var yGroup = g.append("g");
+var yGroup = focus.append("g");
 
-var xGroup = g.append("g")
+var xGroup = focus.append("g")
     .attr("id", "xGroup")
     .attr("transform", "translate(0," + height + ")");
 
@@ -45,6 +45,7 @@ var zoomRect = svg.append("rect")
     .attr("pointer-events", "all")
     .call(zoom);
 
+// Clip path to keep line path within the rectangle
 var mask = svg.append("defs")
   .append("clipPath")
   .attr("id", "mask")
@@ -52,22 +53,6 @@ var mask = svg.append("defs")
     .append("rect")
     .attr("width", width)
     .attr("height", height)
-
-var path = g.append("path")
-    .attr("id", "path")
-    .attr("fill", "none")
-    .attr("stroke", "steelblue")
-    .attr("stroke-linejoin", "round")
-    .attr("stroke-linecap", "round")
-    .attr("stroke-width", 1.5)
-    .attr("clip-path", "url(#mask)")
-
-var g = path.append("g")
-    .attr("class", "axis axis--grid")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis
-        .ticks(24)
-        .tickSize(-height))
 
 var brush = d3.brushX()
     .extent([[0, 0], [width, height2]])
@@ -105,7 +90,24 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
     y.domain([ yMin - 4, yMax]);
 
     yGroup.call(yAxis).select(".domain").remove();
-    path.datum(data);
+    
+    var path = focus.append("path")
+        .datum(data)
+        .attr("id", "path")
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("stroke-width", 1.5)
+        .attr("clip-path", "url(#mask)")
+
+    var g = path.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis
+            .ticks(24)
+            .tickSize(-height))
+
     zoomRect.call(zoom.transform, d3.zoomIdentity);
 
     context.append("path")
@@ -132,7 +134,7 @@ function zoomed() {
     var xz = d3.event.transform.rescaleX(x);
 
     xGroup.call(xAxis.scale(xz));
-    path.attr("d", line.x(function(d){return xz(d.x) }));
+    focus.select("#path").attr("d", line.x(function(d){return xz(d.x) }));
     xGroup
         .selectAll("text")
         .attr("y", 0)
@@ -141,7 +143,7 @@ function zoomed() {
         .attr("transform", "rotate(70)")
         .style("text-anchor", "start");
     xGroup
-        .selectAll(".tick").attr("stroke", "#777").attr("stroke-dasharray", "2,2");
+        .selectAll(".tick").attr("stroke", "#777").style("alpha", 0.5).attr("stroke-dasharray", "2,2");
 
     context.select(".brush").call(brush.move, xz.range().map(t.invertX, t));
 }
@@ -151,9 +153,9 @@ function brushed() {
     var s = d3.event.selection || x2.range();
 
 
-    var xz = d3.scaleTime().domain(s.map(x2.invert, x2));
+    var xz = d3.scaleTime().range([0, width]).domain(s.map(x2.invert, x2));
     xGroup.call(xAxis.scale(xz));
-    path.attr("d", line.x(function(d){return xz(d.x) }));
+    focus.select("#path").attr("d", line.x(function(d){return xz(d.x) }));
     zoomRect.call(zoom.transform, d3.zoomIdentity
         .scale(width / (s[1] - s[0]))
         .translate(-s[0], 0));
