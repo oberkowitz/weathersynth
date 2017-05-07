@@ -1,3 +1,5 @@
+var msPerDay = 86400000 // 24 * 60 * 60 * 1000
+
 // Create outer SVG object
 var svg = d3.select("svg"),
     margin = {top: 20, right: 20, bottom: 110, left: 40},
@@ -155,6 +157,16 @@ function brushed() {
 
     var xz = d3.scaleTime().range([0, width]).domain(s.map(x2.invert, x2));
     xGroup.call(xAxis.scale(xz));
+        xGroup
+        .selectAll("text")
+        .attr("y", 0)
+        .attr("x", 9)
+        .attr("dy", ".35em")
+        .attr("transform", "rotate(70)")
+        .style("text-anchor", "start");
+    xGroup
+        .selectAll(".tick").attr("stroke", "#777").style("alpha", 0.5).attr("stroke-dasharray", "2,2");
+
     focus.select("#path").attr("d", line.x(function(d){return xz(d.x) }));
     zoomRect.call(zoom.transform, d3.zoomIdentity
         .scale(width / (s[1] - s[0]))
