@@ -14,6 +14,8 @@ var svg = d3.select("svg"),
 var parseDate = d3.timeParse("%Y-%m-%d %I:%M %p"),
     formatDate = d3.timeFormat("%Y");
 
+var bisectDate = d3.bisector(d => d.x).left;
+
 var x = d3.scaleTime().range([0, width]),
     y = d3.scaleLinear().range([height, 0]),
     x2 = d3.scaleTime().range([0, width]),
@@ -56,6 +58,7 @@ var mask = svg.append("defs")
     .attr("width", width)
     .attr("height", height)
 
+
 var brush = d3.brushX()
     .extent([[0, 0], [width, height2]])
     .on("brush end", brushed);
@@ -77,9 +80,8 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
     return obj;
 }, function(error, data) {
     if (error) throw error;
-    data = data.sort(function(a, b) {
-        return a.x - b.x;
-    });
+
+    data.sort((a, b) => a.x - b.x);
 
     x.domain(d3.extent(data, function(d) { return d.x; }));
     y.domain([0, d3.max(data, function(d) { return d.y; })]);
@@ -128,6 +130,12 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
         .attr("class", "brush")
         .call(brush)
         .call(brush.move, x.range());
+    function mousemove() {
+        var x0 = d3.mouse(this)[0];
+        console.log(getYForX(x0, path, data));
+    }
+    zoomRect.on('mousemove', mousemove);
+
 });
 
 function zoomed() {
@@ -171,4 +179,38 @@ function brushed() {
     zoomRect.call(zoom.transform, d3.zoomIdentity
         .scale(width / (s[1] - s[0]))
         .translate(-s[0], 0));
+}
+
+function generateSamples(startTime, endTime, increment, data) {
+    var buf = [];
+    if (increment <= 0) {
+        return;
+    }
+    var currentTime = startTime;
+
+    while (currentTime < endTime) {
+        buf.push(getYForX(currentTime));
+        currentTime += increment;
+    }
+    var normies = buf.map(function(x) { // Normalize the data
+        return ardmap(x, Math.min.apply(null, temps), Math.max.apply(null, temps), -1.0, 1.0);
+    })
+    debugger;
+    return buf;
+}   
+// Pass in the already inverted x value
+function getYForX(x0, path, data) {
+    var i = bisectDate(data, x0, 1);
+    var d0 = data[i - 1];
+    var d1 = data[i];
+    // If the y's are equal, just return one so we don't divide by zero
+    if (d0.y == d1.y) {
+        return d0.y;
+    }
+    // Interpolate
+    var i = d3.interpolateObject(d0, d1);
+    var p = (x0 - d0.x) / (d1.x - d0.x);
+    var d = i(p);
+    return d.y;
+
 }
