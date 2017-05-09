@@ -1,5 +1,7 @@
 var msPerDay = 86400000 // 24 * 60 * 60 * 1000
-
+var samplesPerDay = 100;
+var dataObj;
+var currentBuffer = [];
 // Create outer SVG object
 var svg = d3.select("svg"),
     margin = {top: 20, right: 20, bottom: 110, left: 40},
@@ -82,7 +84,7 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
     if (error) throw error;
 
     data.sort((a, b) => a.x - b.x);
-
+    dataObj = data;
     x.domain(d3.extent(data, function(d) { return d.x; }));
     y.domain([0, d3.max(data, function(d) { return d.y; })]);
     x2.domain(x.domain());
@@ -126,11 +128,13 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
         .attr("transform", "translate(0," + height2 + ")")
         .call(xAxis2);
 
-    context.append("g")
+    var brushGroup = context.append("g")
         .attr("class", "brush")
         .call(brush)
         .call(brush.move, x.range());
     function mousemove() {
+        var node = context.select(".brush").node();
+        var brushRange = d3.brushSelection(node);
         var transform = d3.zoomTransform(this);
         var xt = transform.rescaleX(x), yt = transform.rescaleY(y);
         var x0 = xt.invert(d3.mouse(this)[0]);
@@ -158,6 +162,10 @@ function zoomed() {
         .selectAll(".tick").attr("stroke", "#777").style("alpha", 0.5).attr("stroke-dasharray", "2,2");
 
     context.select(".brush").call(brush.move, xz.range().map(t.invertX, t));
+
+    var that = this;
+    sampleBrushedRegion(that);
+
 }
 
 function brushed() {
@@ -183,24 +191,41 @@ function brushed() {
     zoomRect.call(zoom.transform, d3.zoomIdentity
         .scale(width / (s[1] - s[0]))
         .translate(-s[0], 0));
+
+    var that = this;
+    sampleBrushedRegion(that);
 }
 
-function generateSamples(startTime, endTime, increment, data) {
-    var buf = [];
-    if (increment <= 0) {
+function sampleBrushedRegion(that) {
+    var node = context.select(".brush").node();
+    if (!node) return;
+    var brushRange = d3.brushSelection(node);
+    var transform = d3.zoomTransform(this);
+    var xt = transform.rescaleX(x); //, yt = transform.rescaleY(y);
+
+    currentBuffer = generateSamples(x.invert(brushRange[0]), x.invert(brushRange[1]), msPerDay / samplesPerDay, dataObj);
+
+
+}
+
+function generateSamples(xMin, xMax, increment, data) {
+    if (xMax.getTime() - xMin.getTime() >= 30 * msPerDay){
         return;
     }
-    var currentTime = startTime;
+    var buf = [];
+    if (increment <= 0 || xMin >= xMax) {
+        return;
+    }
+    var currentTime = xMin;
 
-    while (currentTime < endTime) {
-        buf.push(getYForX(currentTime));
-        currentTime += increment;
+    while (currentTime < xMax) {
+        buf.push(getYForX(currentTime, path, data));
+        currentTime = new Date(currentTime.getTime() + increment);
     }
     var normies = buf.map(function(x) { // Normalize the data
-        return ardmap(x, Math.min.apply(null, temps), Math.max.apply(null, temps), -1.0, 1.0);
+        return ardmap(x, Math.min.apply(null, buf), Math.max.apply(null, buf), -1.0, 1.0);
     })
-    debugger;
-    return buf;
+    return normies;
 }   
 // Pass in the already inverted x value
 function getYForX(x0, path, data) {
