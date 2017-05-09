@@ -131,7 +131,9 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
         .call(brush)
         .call(brush.move, x.range());
     function mousemove() {
-        var x0 = d3.mouse(this)[0];
+        var transform = d3.zoomTransform(this);
+        var xt = transform.rescaleX(x), yt = transform.rescaleY(y);
+        var x0 = xt.invert(d3.mouse(this)[0]);
         console.log(getYForX(x0, path, data));
     }
     zoomRect.on('mousemove', mousemove);
@@ -164,6 +166,8 @@ function brushed() {
 
 
     var xz = d3.scaleTime().range([0, width]).domain(s.map(x2.invert, x2));
+    var brushedRegion = new Array(x2.invert(s[0]), xz.invert(s[1]));
+
     xGroup.call(xAxis.scale(xz));
         xGroup
         .selectAll("text")
@@ -208,9 +212,9 @@ function getYForX(x0, path, data) {
         return d0.y;
     }
     // Interpolate
-    var i = d3.interpolateObject(d0, d1);
+    var interp = d3.interpolateObject(d0, d1);
     var p = (x0 - d0.x) / (d1.x - d0.x);
-    var d = i(p);
+    var d = interp(p);
     return d.y;
 
 }
