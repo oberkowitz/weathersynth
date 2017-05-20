@@ -1,7 +1,8 @@
 var msPerDay = 86400000 // 24 * 60 * 60 * 1000
 var samplesPerDay = 100;
 var dataObj;
-var currentBuffer = [];
+var audioBuffer;
+var currentBuffer;
 // Create outer SVG object
 var svg = d3.select("svg"),
     margin = {top: 20, right: 20, bottom: 110, left: 40},
@@ -85,6 +86,7 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
 
     data.sort((a, b) => a.x - b.x);
     dataObj = data;
+    postMessageToWorker(data.slice(), msPerDay / samplesPerDay);
     x.domain(d3.extent(data, function(d) { return d.x; }));
     y.domain([0, d3.max(data, function(d) { return d.y; })]);
     x2.domain(x.domain());
@@ -138,7 +140,7 @@ d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function
         var transform = d3.zoomTransform(this);
         var xt = transform.rescaleX(x), yt = transform.rescaleY(y);
         var x0 = xt.invert(d3.mouse(this)[0]);
-        console.log(getYForX(x0, path, data));
+        // console.log(getYForX(x0, path, data));
     }
     zoomRect.on('mousemove', mousemove);
 
@@ -203,43 +205,24 @@ function sampleBrushedRegion(that) {
     var transform = d3.zoomTransform(this);
     var xt = transform.rescaleX(x); //, yt = transform.rescaleY(y);
 
-    currentBuffer = generateSamples(x.invert(brushRange[0]), x.invert(brushRange[1]), msPerDay / samplesPerDay, dataObj);
-
-
+    if (audioBuffer != null) {
+        currentBuffer = audioBuffer.slice(0,100);
+    }
 }
 
-function generateSamples(xMin, xMax, increment, data) {
-    if (xMax.getTime() - xMin.getTime() >= 30 * msPerDay){
-        return;
-    }
-    var buf = [];
-    if (increment <= 0 || xMin >= xMax) {
-        return;
-    }
-    var currentTime = xMin;
+function postMessageToWorker(array, increment) {
+    var myWorker = new Worker("worker.js");
 
-    while (currentTime < xMax) {
-        buf.push(getYForX(currentTime, path, data));
-        currentTime = new Date(currentTime.getTime() + increment);
+    myWorker.onmessage = function(e) {
+        audioBuffer = e.data;
     }
-    var normies = buf.map(function(x) { // Normalize the data
-        return ardmap(x, Math.min.apply(null, buf), Math.max.apply(null, buf), -1.0, 1.0);
-    })
-    return normies;
-}   
-// Pass in the already inverted x value
-function getYForX(x0, path, data) {
-    var i = bisectDate(data, x0, 1);
-    var d0 = data[i - 1];
-    var d1 = data[i];
-    // If the y's are equal, just return one so we don't divide by zero
-    if (d0.y == d1.y) {
-        return d0.y;
-    }
-    // Interpolate
-    var interp = d3.interpolateObject(d0, d1);
-    var p = (x0 - d0.x) / (d1.x - d0.x);
-    var d = interp(p);
-    return d.y;
 
+    var object = {
+        "increment" : increment,
+        "array" : array
+    }
+    // var transfer = JSON.stringify(object);
+    myWorker.postMessage(object);
 }
+
+
