@@ -26,8 +26,9 @@ function generateSamples(data, increment) {
         buf.push(getYForX(i * increment + xMin, data));
     }
 
-	var min = Math.min.apply(null, buf);
-	var max = Math.max.apply(null, buf);
+    // Methods are defined in util.js
+	var min = buf.min();
+	var max = buf.max();
     var normies = buf.map(function(x) { // Normalize the data
         return ardmap(x, min, max, -1.0, 1.0);
     })

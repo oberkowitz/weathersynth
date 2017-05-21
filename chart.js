@@ -1,5 +1,5 @@
 var msPerDay = 86400000 // 24 * 60 * 60 * 1000
-var samplesPerDay = 100;
+var samplesPerDay = 200;
 var dataObj;
 var audioBuffer;
 var currentBuffer;

@@ -20,3 +20,23 @@ Array.prototype.extend = function (other_array) {
 	/* you should include a test to check whether other_array really is an array */
 	other_array.forEach(function(v) {this.push(v)}, this);    
 }
+
+Array.prototype.max = function() {
+  var max = Number.MIN_VALUE;
+  this.forEach(function(e) {
+    if (max <= e) {
+      max = e;
+    }
+  });
+  return max;
+}
+
+Array.prototype.min = function() {
+  var min = Number.MAX_VALUE;
+  this.forEach(function(e) {
+    if (min >= e) {
+      min = e;
+    }
+  });
+  return min;
+}
