@@ -61,9 +61,9 @@ var mask = svg.append("defs")
     .attr("width", width)
     .attr("height", height)
 
-
+var brushExtentX = [0, width];
 var brush = d3.brushX()
-    .extent([[0, 0], [width, height2]])
+    .extent([[brushExtentX[0], 0], [brushExtentX[1], height2]])
     .on("brush end", brushed);
 
 var area2 = d3.area()
@@ -206,7 +206,9 @@ function sampleBrushedRegion(that) {
     var xt = transform.rescaleX(x); //, yt = transform.rescaleY(y);
 
     if (audioBuffer != null) {
-        currentBuffer = audioBuffer.slice(0,100);
+        var s = Math.floor(ardmap(brushRange[0], brushExtentX[0], brushExtentX[1], 0, audioBuffer.length));
+        var e = Math.floor(ardmap(brushRange[1], brushExtentX[0], brushExtentX[1], 0, audioBuffer.length));
+        currentBuffer = audioBuffer.slice(s, e);
     }
 }
 
