@@ -61,9 +61,9 @@ var mask = svg.append("defs")
     .attr("width", width)
     .attr("height", height)
 
-var brushExtentX = [0, width];
+
 var brush = d3.brushX()
-    .extent([[brushExtentX[0], 0], [brushExtentX[1], height2]])
+    .extent([[0, 0], [width, height2]])
     .on("brush end", brushed);
 
 var area2 = d3.area()
@@ -206,9 +206,9 @@ function sampleBrushedRegion(that) {
     var xt = transform.rescaleX(x); //, yt = transform.rescaleY(y);
 
     if (audioBuffer != null) {
-        var s = Math.floor(ardmap(brushRange[0], brushExtentX[0], brushExtentX[1], 0, audioBuffer.length));
-        var e = Math.floor(ardmap(brushRange[1], brushExtentX[0], brushExtentX[1], 0, audioBuffer.length));
-        currentBuffer = audioBuffer.slice(s, e);
+        var startIndex = Math.floor(ardmap(brushRange[0], 0, 900, 0, audioBuffer.length));
+        var endIndex = Math.floor(ardmap(brushRange[1], 0, 900, 0, audioBuffer.length));
+        currentBuffer = audioBuffer.slice(startIndex, endIndex);
     }
 }
 
@@ -217,6 +217,7 @@ function postMessageToWorker(array, increment) {
 
     myWorker.onmessage = function(e) {
         audioBuffer = e.data;
+        currentBuffer = audioBuffer;
     }
 
     var object = {
@@ -227,4 +228,15 @@ function postMessageToWorker(array, increment) {
     myWorker.postMessage(object);
 }
 
+function playBuffer() {
+    if (currentBuffer != null) {    
+        var sound = new WeatherSynth();
+        sound.render(currentBuffer);
+    }
+}
+window.onload = function(){
+
+    var button = document.getElementById('trigger');
+    button.onclick = playBuffer;
+}
 
