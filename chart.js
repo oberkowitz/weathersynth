@@ -206,7 +206,9 @@ function sampleBrushedRegion(that) {
     var xt = transform.rescaleX(x); //, yt = transform.rescaleY(y);
 
     if (audioBuffer != null) {
-        currentBuffer = audioBuffer.slice(0,100);
+        var startIndex = Math.floor(ardmap(brushRange[0], 0, 900, 0, audioBuffer.length));
+        var endIndex = Math.floor(ardmap(brushRange[1], 0, 900, 0, audioBuffer.length));
+        currentBuffer = audioBuffer.slice(startIndex, endIndex);
     }
 }
 
@@ -215,6 +217,7 @@ function postMessageToWorker(array, increment) {
 
     myWorker.onmessage = function(e) {
         audioBuffer = e.data;
+        currentBuffer = audioBuffer;
     }
 
     var object = {

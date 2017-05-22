@@ -32,7 +32,6 @@ WeatherSynth.prototype.render = function(buf) {
 	biquadFilter.type = "lowpass";
 	biquadFilter.frequency.value = 10000;
 
-	source.playbackRate.value = .3;
 	source.start();
 	env.trigger();
 }
