@@ -225,4 +225,15 @@ function postMessageToWorker(array, increment) {
     myWorker.postMessage(object);
 }
 
+function playBuffer() {
+    if (currentBuffer != null) {    
+        var sound = new WeatherSynth();
+        sound.render(currentBuffer);
+    }
+}
+window.onload = function(){
+
+    var button = document.getElementById('trigger');
+    button.onclick = playBuffer;
+}
 
