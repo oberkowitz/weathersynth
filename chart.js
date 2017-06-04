@@ -76,17 +76,8 @@ var context = svg.append("g")
     .attr("class", "context")
     .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
-d3.tsv("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", function(d) {
-    obj = {};
-    obj.x = parseDate(d["Time (PST)"]);
-    obj.y = +d["Temp."].replace(/[^\d.-]/g, '');
-    return obj;
-}, function(error, data) {
-    if (error) throw error;
-
-    data.sort((a, b) => a.x - b.x);
-    dataObj = data;
-    postMessageToWorker(data.slice(), msPerDay / samplesPerDay);
+var dataProvider = new DataProvider("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", "Time (PST)", "Temp.");
+dataProvider.getData().then(function(data) {
     x.domain(d3.extent(data, function(d) { return d.x; }));
     y.domain([0, d3.max(data, function(d) { return d.y; })]);
     x2.domain(x.domain());

@@ -1,9 +1,10 @@
 var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function WeatherSynth() {
+function WeatherSynth(dataBuffer) {
 	this.audioCtx = audioCtx;
+	this.dataBuffer = dataBuffer;
 }
 
-WeatherSynth.prototype.render = function(buf) {
+WeatherSynth.prototype.render = function() {
 	console.log(buf.length);
 	var channels = 2;
 	var frameCount = buf.length;

@@ -13,6 +13,7 @@ onmessage = function(e) {
 }
 
 function generateSamples(data, increment) {
+    data.sort((a, b) => a.x - b.x);	
     var xMin = d3.min(data, function(d) { return d.x; }).getTime();
     var xMax = d3.max(data, function(d) { return d.x; }).getTime();
 
