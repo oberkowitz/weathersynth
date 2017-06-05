@@ -39,7 +39,6 @@ DataProvider.prototype.fetchDataFromSource = function(success, failure) {
         if (error) failure(error);
         that.data = data;
         success(that.data);
-        that.postMessageToWorker(that.data.slice(), msPerDay / samplesPerDay);
     });
 }
 
@@ -52,7 +51,10 @@ DataProvider.prototype.getTimeseries = function() {
                 if (this.data != null) {
                     this.postMessageToWorker(data.slice(), msPerDay / samplesPerDay, resolve, reject);
                 } else {
-                    this.fetchDataFromSource(resolve, reject);
+                    var that = this;
+                    this.fetchDataFromSource(function(data) {
+                        that.postMessageToWorker(data.slice(), msPerDay / samplesPerDay, resolve, reject);
+                    }, reject);
                 }
             }
         }

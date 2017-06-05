@@ -2,10 +2,56 @@
 <svg width="960" height="500"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="http://localhost:8000/js/util.js"></script>
+<script src="http://localhost:8000/push2Colours.js"></script>
+<script src="http://localhost:8000/push2.js"></script>
 <script src="http://localhost:8000/js/sound/EnvelopeGenerator.js"></script>
 <script src="http://localhost:8000/DataProvider.js"></script>
 <script src="http://localhost:8000/chart.js"></script>
-<script src="http://localhost:8000/sound.js"></script>
+<script src="http://localhost:8000/WeatherSynth.js"></script>
+<head>
+    <script type="text/javascript">
+    var dataProvider = new DataProvider("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", "Time (PST)", "Temp.");
+    var chart;
+    dataProvider.getData().then(function(data) {
+        chart = new Chart({
+            "data": data,
+            "listeners": [console.log]
+        });
+        chart.initialize();
+    });
+
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var push2 = new Push2();
+    push2.initialise(function(){
+        push2.allLightsOff();
+    })
+
+    function __padToNoteNumber(x, y)
+    {
+        return 36 + x + y * 8
+    }
+
+    dataProvider.getTimeseries().then(function(timeseries) {
+        let weatherSynth = new WeatherSynth(timeseries);
+
+        push2.padPressed = function(x, y, velocity){
+            this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
+            var note = __padToNoteNumber(x, y);
+            weatherSynth.noteOn(note, velocity);
+            push2.setPadColour(x, y, push2.colour(255, 0, 0));
+        }
+        push2.padReleased = function(x, y, velocity){
+            this.logMidiEvent("padReleased: "+x+" "+y+" "+velocity);
+            var note = __padToNoteNumber(x, y);
+            weatherSynth.noteOff(note);
+            push2.setPadColour(x, y, push2.colour(0, 0, 0));
+        }
+
+        chart.addListener(weatherSynth.setSelection.bind(weatherSynth));
+   })
+
+    </script>
+</head>
 <body>
 	<input type="button" id="trigger">Play the weather</input>
 </body>

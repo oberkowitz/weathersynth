@@ -211,24 +211,4 @@ Chart.prototype.initialize = function() {
     }
 };
 
-var dataProvider = new DataProvider("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", "Time (PST)", "Temp.");
-dataProvider.getData().then(function(data) {
-    var chart = new Chart({
-        "data": data,
-        "listeners" : [console.log]
-    });
-    chart.initialize();
-});
-
-function playBuffer() {
-    if (currentBuffer != null) {    
-        var sound = new WeatherSynth();
-        sound.render(currentBuffer);
-    }
-}
-window.onload = function(){
-
-    var button = document.getElementById('trigger');
-    button.onclick = playBuffer;
-}
 
