@@ -38,7 +38,7 @@
             this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
             var note = __padToNoteNumber(x, y);
             weatherSynth.noteOn(note, velocity);
-            push2.setPadColour(x, y, push2.colour(255, 0, 0));
+            push2.setPadColour(x, y, push2.colour(255, 0, 255));
         }
         push2.padReleased = function(x, y, velocity){
             this.logMidiEvent("padReleased: "+x+" "+y+" "+velocity);
