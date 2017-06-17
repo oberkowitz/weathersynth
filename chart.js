@@ -92,6 +92,8 @@ Chart.prototype.initialize = function() {
         .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
     // Data operations start here
+    this.data.sort((a, b) => a.x - b.x);
+
     x.domain(d3.extent(this.data, function(d) { return d.x; }));
     y.domain([0, d3.max(this.data, function(d) { return d.y; })]);
     x2.domain(x.domain());
