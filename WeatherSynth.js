@@ -1,8 +1,10 @@
-function WeatherSynth(dataBuffer) {
+function WeatherSynth(dataBuffer, smoothingBuffer) {
 	this.audioCtx = audioCtx;
 	this.dataBuffer = dataBuffer;
 	this.currentBuffer = dataBuffer;
 	this.activeKeys = {};
+	this.smoothingBuffer = smoothingBuffer;
+	this.smoothingPercentage = 0;
 }
 
 WeatherSynth.prototype.createBufferForNote = function(note, velocity) {
@@ -18,6 +20,9 @@ WeatherSynth.prototype.createBufferForNote = function(note, velocity) {
 
 	for (var channel = 0; channel < channels; channel++) {
 		var nowBuffering = buffer.getChannelData(channel);
+		if (this.smoothingPercentage > 0) {
+			this.currentBuffer = this.smoothedBuffer(this.smoothingPercentage);
+		}
 		for (var i = 0; i < frameCount; i++) {
 			nowBuffering[i] = this.currentBuffer[i];
 		}
@@ -62,4 +67,14 @@ WeatherSynth.prototype.noteOn = function(note, velocity) {
 WeatherSynth.prototype.noteOff = function(note) {
 	if (!this.activeKeys[note]) return;
 	this.activeKeys[note].envelope.release();
+}
+
+WeatherSynth.prototype.smoothedBuffer = function(percentage) {
+	var interpolator = d3.interpolate(this.currentBuffer, this.smoothingBuffer);
+	var amount = ardmap(percentage, 0, 100, 0, 1);
+	return interpolator(amount);
+};
+
+WeatherSynth.prototype.setSmoothing = function(percentage) {
+	this.smoothingPercentage = percentage;
 }

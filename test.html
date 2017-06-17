@@ -10,6 +10,7 @@
 <script src="http://localhost:8000/WeatherSynth.js"></script>
 <head>
     <script type="text/javascript">
+    var smoothingPercentage = 0;
     var dataProvider = new DataProvider("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", "Time (PST)", "Temp.");
     var chart;
     dataProvider.getData().then(function(data) {
@@ -31,12 +32,27 @@
         return 36 + x + y * 8
     }
 
+    // Return a function that given a sample
+    function smoothingWaveGenerator(baseFreq) {
+        // The smoothing wave is a negative cosine
+        return function(t) {
+            return -1 * Math.cos(2 * Math.PI * baseFreq * t)
+        }
+    }
+
     dataProvider.getTimeseries().then(function(timeseries) {
-        let weatherSynth = new WeatherSynth(timeseries);
+        var smoothingWave = [];
+        var coz = smoothingWaveGenerator(220.5);
+        for (var i = 0; i < timeseries.length; i++) {
+            smoothingWave.push(coz(i));
+        }
+
+        let weatherSynth = new WeatherSynth(timeseries, smoothingWave);
 
         push2.padPressed = function(x, y, velocity){
             this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
             var note = __padToNoteNumber(x, y);
+            weatherSynth.setSmoothing(smoothingPercentage);
             weatherSynth.noteOn(note, velocity);
             push2.setPadColour(x, y, push2.colour(255, 0, 0));
         }
