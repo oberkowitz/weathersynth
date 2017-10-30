@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<svg width="960" height="500"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="http://localhost:8000/js/util.js"></script>
 <script src="http://localhost:8000/push2Colours.js"></script>
@@ -21,10 +20,11 @@
     });
 
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    var push2 = new Push2();
-    push2.initialise(function(){
-        push2.allLightsOff();
-    })
+    var push2 = {};
+    // var push2 = new Push2();
+    // push2.initialise(function(){
+        // push2.allLightsOff();
+    // })
 
     function __padToNoteNumber(x, y)
     {
@@ -32,7 +32,9 @@
     }
 
     dataProvider.getTimeseries().then(function(timeseries) {
-        let weatherSynth = new WeatherSynth(timeseries);
+        var canvas = document.querySelector('.visualizer');
+
+        let weatherSynth = new WeatherSynth(timeseries, audioCtx, canvas);
 
         push2.padPressed = function(x, y, velocity){
             this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
@@ -48,10 +50,31 @@
         }
 
         chart.addListener(weatherSynth.setSelection.bind(weatherSynth));
-   })
+
+        var held = false;
+        document.addEventListener('keydown', (event) => {
+          const keyName = event.key;
+
+          if (keyName == "a" && held == false) {
+            weatherSynth.noteOn(60, 100);
+            held = true;
+            // push2.setPadColour(0, 3, push2.colour(255, 0, 255));
+          }
+        });
+
+        document.addEventListener('keyup', (event) => {
+          const keyName = event.key;
+          held = false
+          if (keyName == "a") {
+            weatherSynth.noteOff(60);
+            // push2.setPadColour(0, 3, push2.colour(0, 0, 0));
+          }
+        });
+    });
 
     </script>
 </head>
 <body>
-	<input type="button" id="trigger">Play the weather</input>
+    <canvas class="visualizer" width="960" height="100"></canvas>
+    <svg width="960" height="500"></svg>
 </body>
