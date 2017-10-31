@@ -6,6 +6,7 @@ function WeatherSynth(dataBuffer, audioCtx, canvas) {
 	this.analyser = this.audioCtx.createAnalyser();
 	this.analyser.connect(this.audioCtx.destination);
 	this.activeKeys = {};
+	this.startVisualizer(this.analyser);
 }
 
 WeatherSynth.prototype.createBufferForNote = function(note, velocity) {
@@ -37,7 +38,6 @@ WeatherSynth.prototype.createBufferForNote = function(note, velocity) {
 	biquadFilter.type = "lowpass";
 	biquadFilter.frequency.value = 10000;
 
-	this.startVisualizer(this.analyser);
 	return {
 		"source": source,
 		"envelope": envelope
@@ -85,7 +85,7 @@ WeatherSynth.prototype.startVisualizer = function(analyser) {
 	var canvasCtx = this.canvas.getContext("2d");
 
 	analyser.fftSize = 2048;
-	var bufferLength = analyser.fftSize;
+	var bufferLength = analyser.frequencyBinCount;
 	console.log(bufferLength);
 	var dataArray = new Uint8Array(bufferLength);
 
