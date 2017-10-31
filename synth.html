@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<svg width="960" height="500"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="http://localhost:8000/js/util.js"></script>
 <script src="http://localhost:8000/push2Colours.js"></script>
@@ -7,6 +6,7 @@
 <script src="http://localhost:8000/js/sound/EnvelopeGenerator.js"></script>
 <script src="http://localhost:8000/DataProvider.js"></script>
 <script src="http://localhost:8000/chart.js"></script>
+<script src="http://localhost:8000/keyboard.js"></script>
 <script src="http://localhost:8000/WeatherSynth.js"></script>
 <head>
     <script type="text/javascript">
@@ -21,10 +21,11 @@
     });
 
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    var push2 = new Push2();
-    push2.initialise(function(){
-        push2.allLightsOff();
-    })
+    var push2 = {};
+    // var push2 = new Push2();
+    // push2.initialise(function(){
+        // push2.allLightsOff();
+    // })
 
     function __padToNoteNumber(x, y)
     {
@@ -32,7 +33,9 @@
     }
 
     dataProvider.getTimeseries().then(function(timeseries) {
-        let weatherSynth = new WeatherSynth(timeseries);
+        var canvas = document.querySelector('.visualizer');
+
+        let weatherSynth = new WeatherSynth(timeseries, audioCtx, canvas);
 
         push2.padPressed = function(x, y, velocity){
             this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
@@ -48,10 +51,26 @@
         }
 
         chart.addListener(weatherSynth.setSelection.bind(weatherSynth));
-   })
+
+        var keyboard = new Keyboard(weatherSynth, push2);
+        document.addEventListener('keydown', 
+            (event) => {
+                const keyName = event.key;
+                keyboard.onKeyDown(keyName);
+            }
+        );
+
+        document.addEventListener('keyup', 
+            (event) => {
+                const keyName = event.key;
+                keyboard.onKeyUp(keyName);
+            }
+        );
+    });
 
     </script>
 </head>
 <body>
-	<input type="button" id="trigger">Play the weather</input>
+    <canvas class="visualizer" width="960" height="100"></canvas>
+    <svg width="960" height="500"></svg>
 </body>
