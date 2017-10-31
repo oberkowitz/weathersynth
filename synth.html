@@ -6,6 +6,7 @@
 <script src="http://localhost:8000/js/sound/EnvelopeGenerator.js"></script>
 <script src="http://localhost:8000/DataProvider.js"></script>
 <script src="http://localhost:8000/chart.js"></script>
+<script src="http://localhost:8000/keyboard.js"></script>
 <script src="http://localhost:8000/WeatherSynth.js"></script>
 <head>
     <script type="text/javascript">
@@ -51,25 +52,20 @@
 
         chart.addListener(weatherSynth.setSelection.bind(weatherSynth));
 
-        var held = false;
-        document.addEventListener('keydown', (event) => {
-          const keyName = event.key;
+        var keyboard = new Keyboard(weatherSynth, push2);
+        document.addEventListener('keydown', 
+            (event) => {
+                const keyName = event.key;
+                keyboard.onKeyDown(keyName);
+            }
+        );
 
-          if (keyName == "a" && held == false) {
-            weatherSynth.noteOn(60, 100);
-            held = true;
-            // push2.setPadColour(0, 3, push2.colour(255, 0, 255));
-          }
-        });
-
-        document.addEventListener('keyup', (event) => {
-          const keyName = event.key;
-          held = false
-          if (keyName == "a") {
-            weatherSynth.noteOff(60);
-            // push2.setPadColour(0, 3, push2.colour(0, 0, 0));
-          }
-        });
+        document.addEventListener('keyup', 
+            (event) => {
+                const keyName = event.key;
+                keyboard.onKeyUp(keyName);
+            }
+        );
     });
 
     </script>
