@@ -4,6 +4,7 @@ function WeatherSynth(dataBuffer, audioCtx, canvas) {
 	this.dataBuffer = dataBuffer;
 	this.currentBuffer = dataBuffer;
 	this.analyser = this.audioCtx.createAnalyser();
+	this.analyser.smoothingTimeConstant = 1.0;
 	this.analyser.connect(this.audioCtx.destination);
 	this.activeKeys = {};
 	this.startVisualizer(this.analyser);
@@ -130,3 +131,24 @@ WeatherSynth.prototype.startVisualizer = function(analyser) {
 
 	draw();
 }
+
+WeatherSynth.prototype.handleMidiMessage = function(ev) {
+	data = ev.data;
+	var cmd = data[0];
+	var channel = data[0] & 0xf;
+	var noteNumber = data[1];
+	var velocity = data[2];
+	var row = Math.floor(noteNumber / 16);
+	var col = noteNumber % 16;
+
+	if (cmd == 0x80 || ((cmd == 0x90) && (velocity == 0))) { // with MIDI, note on with velocity zero is the same as note off
+		this.noteOff(noteNumber)
+	} else if (cmd == 0x90) { // Note on
+		this.noteOn(noteNumber, velocity)
+	} else if (cmd == 0xB0) { // Continuous Controller message
+		switch (noteNumber) {
+			// TODO: link CC messages to weather synth parameters
+		}
+	}
+}
+

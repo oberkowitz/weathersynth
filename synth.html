@@ -8,6 +8,7 @@
 <script src="http://localhost:8000/chart.js"></script>
 <script src="http://localhost:8000/keyboard.js"></script>
 <script src="http://localhost:8000/WeatherSynth.js"></script>
+<script src="http://localhost:8000/midi.js"></script>
 <head>
     <script type="text/javascript">
     var dataProvider = new DataProvider("http://localhost:8000/weatherData/KOAK/KOAK-2016-complete.tsv", "Time (PST)", "Temp.");
@@ -31,46 +32,65 @@
     {
         return 36 + x + y * 8
     }
+    window.addEventListener('load', function() {
+        dataProvider.getTimeseries().then(function(timeseries) {
+            var canvas = document.querySelector('.visualizer');
 
-    dataProvider.getTimeseries().then(function(timeseries) {
-        var canvas = document.querySelector('.visualizer');
+            let weatherSynth = new WeatherSynth(timeseries, audioCtx, canvas);
 
-        let weatherSynth = new WeatherSynth(timeseries, audioCtx, canvas);
-
-        push2.padPressed = function(x, y, velocity){
-            this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
-            var note = __padToNoteNumber(x, y);
-            weatherSynth.noteOn(note, velocity);
-            push2.setPadColour(x, y, push2.colour(255, 0, 255));
-        }
-        push2.padReleased = function(x, y, velocity){
-            this.logMidiEvent("padReleased: "+x+" "+y+" "+velocity);
-            var note = __padToNoteNumber(x, y);
-            weatherSynth.noteOff(note);
-            push2.setPadColour(x, y, push2.colour(0, 0, 0));
-        }
-
-        chart.addListener(weatherSynth.setSelection.bind(weatherSynth));
-
-        var keyboard = new Keyboard(weatherSynth, push2);
-        document.addEventListener('keydown', 
-            (event) => {
-                const keyName = event.key;
-                keyboard.onKeyDown(keyName);
+            push2.padPressed = function(x, y, velocity){
+                this.logMidiEvent("padPressed: "+x+" "+y+" "+velocity);
+                var note = __padToNoteNumber(x, y);
+                weatherSynth.noteOn(note, velocity);
+                push2.setPadColour(x, y, push2.colour(255, 0, 255));
             }
-        );
-
-        document.addEventListener('keyup', 
-            (event) => {
-                const keyName = event.key;
-                keyboard.onKeyUp(keyName);
+            push2.padReleased = function(x, y, velocity){
+                this.logMidiEvent("padReleased: "+x+" "+y+" "+velocity);
+                var note = __padToNoteNumber(x, y);
+                weatherSynth.noteOff(note);
+                push2.setPadColour(x, y, push2.colour(0, 0, 0));
             }
-        );
+
+            chart.addListener(weatherSynth.setSelection.bind(weatherSynth));
+
+            var keyboard = new Keyboard(weatherSynth, push2);
+            document.addEventListener('keydown', 
+                (event) => {
+                    const keyName = event.key;
+                    keyboard.onKeyDown(keyName);
+                }
+            );
+
+            document.addEventListener('keyup', 
+                (event) => {
+                    const keyName = event.key;
+                    keyboard.onKeyUp(keyName);
+                }
+            );
+            var startButton = document.getElementById("startButton");
+            startButton.disabled = false;
+            navigator.requestMIDIAccess({}).then(midiInit(weatherSynth), onMIDIFail);
+
+        });
+
     });
-
     </script>
 </head>
 <body>
     <canvas class="visualizer" width="960" height="100"></canvas>
     <svg width="960" height="500"></svg>
+    <p>
+        MIDI Input:
+        <select id=midiIn onchange='changeMidiIn();'>
+            <option value="">Not connected</option>
+        </select>
+        MIDI Output:
+        <select id=midiOut onchange='changeMidiOut();'>
+            <option value="">Not connected</option>
+        </select>
+        <button id="startButton" disabled="true" onclick="startWeatherSynthMidi()">
+            Start MIDI
+        </button>
+    </p>
+
 </body>
