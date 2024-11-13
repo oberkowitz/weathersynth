@@ -2,10 +2,21 @@
 play the weather
 
 # Set up
-you'll need to run the script `yearlyscraper.sh` with the airport code and year you want to use. you'll also need to make the tablescrape.py file executable to do that. ```chmod +x tablescrape.py``` And you need python installed.
+Set up Python using this guide
+* brew installed pyenv, pipenv
+* Installing packages with pipenv
 
-Ex: `sh yearlyscraper.sh KOAK 2016`. Usually, you take the 3 digit airport code and put a K in front of it. That will dump all the weather data to `./weatherData/KOAK/`
 
-# Running the test
-First things first, run the scraper so you have the data. If you didn't use the OAK airport, change the code in weather.html to use your airport.
-Run `python -m SimpleHTTPServer` in the root directory in order to properly run the example. Visit `http://localhost:8000/weather.html`
+# Goal
+
+The goal of the new wav branch is to do the following things:
+1. Use the Visual Crossing API to retreive weather data in CSV form.
+2. Massage the data into a .wav file for use with Ableton's Wavetable device
+
+The prepared .wav file should be tuned to middle C (256 Hz) at 44.1 kHZ.
+
+TODO: 
+* Each day's wavetable should be balanced over the zero point.
+* Apply windowing on each day's waveform in order to have nice zero crossings.
+
+This details the Wavetable device's expectations with regards to wavetable .wav files https://help.ableton.com/hc/en-us/articles/360002719179-User-Wavetables
