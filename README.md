@@ -20,3 +20,9 @@ TODO:
 * Apply windowing on each day's waveform in order to have nice zero crossings.
 
 This details the Wavetable device's expectations with regards to wavetable .wav files https://help.ableton.com/hc/en-us/articles/360002719179-User-Wavetables
+
+lol I'm not as creative as I thought https://www.sambilbow.com/projects/weathersynth/
+
+
+To run:
+pipenv run python wav/wav_interp.py

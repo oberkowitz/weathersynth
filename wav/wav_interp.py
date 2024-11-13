@@ -20,7 +20,7 @@ x = np.linspace(xp.min(), xp.max(), num=184, endpoint=True)
 seconds_per_day = 86400.0
 sample_rate = 44100.0
 middle_c = 261.0
-samples_per_cycle = sample_rate / middle_c
+samples_per_cycle = 1024.0
 step_in_seconds = seconds_per_day / samples_per_cycle
 
 
