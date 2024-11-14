@@ -35,10 +35,11 @@ sample_rate = 44100.0
 middle_c = 261.0
 samples_per_cycle = 1024.0
 step_in_seconds = seconds_per_day / samples_per_cycle
+one_hour = 60. * 60.
 
-# TODO: arange is end-exclusive, so the number of samples is probably a bit shorter than it needs to be. for the test file, it was 2006 samples instead of expected 2048
-x2 = np.arange(xp.min(), xp.max(), step=step_in_seconds)
-
+# TODO: arange is end-exclusive, so the number of samples is probably a bit shorter than it needs to be. for the test file, it was 2006 samples instead of expected 2048. That's why I'm adding an hour
+x2 = np.arange(xp.min(), xp.max() + one_hour, step=step_in_seconds)
+print(len(x2))
 y = np.interp(x2, xp, fp)
 audio = y 
 # Normalize to [-1,1]
