@@ -39,10 +39,13 @@ one_hour = 60. * 60.
 
 # TODO: arange is end-exclusive, so the number of samples is probably a bit shorter than it needs to be. for the test file, it was 2006 samples instead of expected 2048. That's why I'm adding an hour
 x2 = np.arange(xp.min(), xp.max() + one_hour, step=step_in_seconds)
-print(len(x2))
-y = np.interp(x2, xp, fp)
+
+y = np.interp(x, xp, fp)
 audio = y 
 # Normalize to [-1,1]
 audio = 2.*(audio - np.min(audio))/np.ptp(audio)-1
 
-write(f"test-{datetime.datetime.now().microsecond}.wav", int(sample_rate), audio.astype(np.float32))
+file_name = f"test-{datetime.datetime.now().microsecond}.wav"
+write(file_name, int(sample_rate), audio.astype(np.float32))
+
+print(f"Wrote {len(audio)} samples to {file_name}")
