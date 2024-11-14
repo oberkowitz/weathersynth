@@ -36,7 +36,7 @@ middle_c = 261.0
 samples_per_cycle = 1024.0
 step_in_seconds = seconds_per_day / samples_per_cycle
 
-
+# TODO: arange is end-exclusive, so the number of samples is probably a bit shorter than it needs to be. for the test file, it was 2006 samples instead of expected 2048
 x2 = np.arange(xp.min(), xp.max(), step=step_in_seconds)
 
 y = np.interp(x2, xp, fp)

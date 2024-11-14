@@ -26,7 +26,7 @@ lol I'm not as creative as I thought https://www.sambilbow.com/projects/weathers
 
 To run:
 pipenv run python wav/wav_interp.py
-
+52.47725276235063, 13.408236478043069
 
 ## Different approaches
 
