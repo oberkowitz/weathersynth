@@ -3,7 +3,7 @@ import numpy as np
 import numpy.lib.recfunctions
 from scipy.io.wavfile import write
 
-records = np.genfromtxt('./KLGB_20240418_2024-04-19.csv', delimiter=',', names=True, dtype=None)
+records = np.genfromtxt('./wav/data/berlin 1992-07-01 to 1992-07-31.tsv', delimiter='\t', names=True, dtype=None)
 
 datetimes = records['datetime'].astype(np.datetime64)
 # Convert to float (Unix seconds) 
