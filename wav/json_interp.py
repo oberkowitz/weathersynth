@@ -1,4 +1,4 @@
-# This file takes a CSV file and creates an audio file out of it.
+# This file takes a JSON file and creates an audio file out of it.
 import numpy as np
 import datetime
 from scipy.io.wavfile import write
