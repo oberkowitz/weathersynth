@@ -4,48 +4,47 @@ import datetime
 from scipy.io.wavfile import write
 import json
 
+# To avoid confusion, the following definition of words will be used:
+#    * Wavetable == a single wavetable
+#    * Sprite == A collection of wavetables in an audio file
+
+SAMPLE_RATE = 44100.0
+
 def load_from_json_file(fpath):
 
     with open(fpath) as f:
         d = json.load(f)
     return d
 
-def flat_map(f, xs):
-    ys = []
-    for x in xs:
-        ys.extend(f(x))
-    return ys
+# Assumes x is monotonically increasing
+def generate_wavetable(x, y, num_samples: int):
+    ## use linspace for even spacing between start and end
+    x2 = np.linspace(x.min(), x.max(), num_samples)
+    interpolated = np.interp(x2, x, y)
+    return interpolated
 
-response = load_from_json_file("/Users/oberk/git/weathersynth/wav/data/2024-04-18.json")
+# Assumes x-axis will be `datetimeEpoch`
+def generate_yearlong_wavetable(year_json, y_name: str, num_samples: int):
+    days = np.array(year_json['days'])
+    xys = map(lambda h: (h['datetimeEpoch'], h[y_name]), days)
+    npxys = np.array(list(xys), dtype = [('datetimeEpoch', 'i4'), (y_name, 'f4')])
+    return generate_wavetable(npxys["datetimeEpoch"], npxys[y_name], num_samples)
 
-days = np.array(response['days'])
-xys = flat_map( lambda day: map(lambda h: (h['datetimeEpoch'], h['temp']), day['hours']), days)
-npxys = np.array(xys, dtype = [('datetimeEpoch', 'i4'), ('temp', 'f4')])
+response_1976 = load_from_json_file("/Users/oberk/git/weathersynth/wav/data/1976/Berlin_1976.json")
+response_1992 = load_from_json_file("/Users/oberk/git/weathersynth/wav/data/1992/Berlin_1992.json")
+response_2008 = load_from_json_file("/Users/oberk/git/weathersynth/wav/data/2008/Berlin_2008.json")
+response_2024 = load_from_json_file("/Users/oberk/git/weathersynth/wav/data/2024/Berlin_2024.json")
 
-xp = npxys['datetimeEpoch']
-fp = npxys['temp']
-## use linspace for even spacing between start and end
-# x = np.linspace(xp.min(), xp.max(), num=184, endpoint=True)
-## Use arange for known step value
-## 86,400 seconds in a day
-## Middle C is 261 Hz
-## dividing a day into that many samples means incrementing with arange by 469.8205546492659
-seconds_per_day = 86400.0
-sample_rate = 44100.0
-middle_c = 261.0
-samples_per_cycle = 1024.0
-step_in_seconds = seconds_per_day / samples_per_cycle
-one_hour = 60. * 60.
+wavetable_1976 = generate_yearlong_wavetable(response_1976, "tempmax", 1024)
+wavetable_1992 = generate_yearlong_wavetable(response_1992, "tempmax", 1024)
+wavetable_2008 = generate_yearlong_wavetable(response_2008, "tempmax", 1024)
+wavetable_2024 = generate_yearlong_wavetable(response_2024, "tempmax", 1024)
 
-# TODO: arange is end-exclusive, so the number of samples is probably a bit shorter than it needs to be. for the test file, it was 2006 samples instead of expected 2048. That's why I'm adding an hour
-x2 = np.arange(xp.min(), xp.max() + one_hour, step=step_in_seconds)
-
-y = np.interp(x, xp, fp)
-audio = y 
-# Normalize to [-1,1]
-audio = 2.*(audio - np.min(audio))/np.ptp(audio)-1
+final_audio = np.concatenate((wavetable_1976, wavetable_1992, wavetable_2008, wavetable_2024))
+#Normalized
+final_audio = 2.*(final_audio - np.min(final_audio))/np.ptp(final_audio)-1
 
 file_name = f"test-{datetime.datetime.now().microsecond}.wav"
-write(file_name, int(sample_rate), audio.astype(np.float32))
+write(file_name, int(SAMPLE_RATE), final_audio.astype(np.float32))
 
-print(f"Wrote {len(audio)} samples to {file_name}")
+print(f"Wrote {len(final_audio)} samples to {file_name}")

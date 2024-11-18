@@ -1,0 +1,1 @@
+Data was fetched 16_11_24, contains predictions instead of real data
