@@ -1,1 +1,4 @@
 weatherData/
+.DS_Store
+*.wav
+*.asd
